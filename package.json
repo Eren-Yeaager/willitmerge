@@ -1,0 +1,16 @@
+{
+    "name":"willitmerge",
+    "version":"0.1.0",
+    "type":"module",
+    "private":true,
+    "workspaces":[
+        "frontend",
+        "backend"
+    ],
+    "scripts":{
+        "dev":"npm run dev --workspaces=frontend & npm run dev --workspaces=backend",
+        "build":"npm run build --workspaces=frontend && npm run build --workdpaces=backend",
+        "install:all":"npm install"
+    }
+
+}
