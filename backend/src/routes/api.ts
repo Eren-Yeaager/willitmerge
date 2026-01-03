@@ -14,4 +14,11 @@ export async function apiRoutes(fastify: FastifyInstance) {
             timestamp: new Date().toISOString()
         }
     })
+    fastify.get('/api/test-db', async (request, reply) => {
+        const result = await fastify.pg.query('SELECT NOW() as current_time, version() as pg_version')
+        return {
+            status: 'connected',
+            database: result.rows[0]
+        }
+    })
 }

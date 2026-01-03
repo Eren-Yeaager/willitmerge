@@ -1,7 +1,9 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import 'dotenv/config'
 import { healthRoutes } from './routes/health'
 import { apiRoutes } from './routes/api'
+import postgres from '@fastify/postgres'
 const fastify = Fastify({
     logger: true
 })
@@ -10,6 +12,7 @@ await fastify.register(cors, {
     origin: 'http://localhost:3000',
     credentials: true
 })
+
 // Error handler (catches thrown errors)
 fastify.setErrorHandler((error, request, reply) => {
     fastify.log.error(error)
@@ -26,7 +29,9 @@ fastify.setNotFoundHandler((request, reply) => {
         path: request.url
     })
 })
-
+await fastify.register(postgres, {
+    connectionString: process.env.DATABASE_URL
+})
 await fastify.register(healthRoutes)
 await fastify.register(apiRoutes)
 
