@@ -1,4 +1,11 @@
+import { error } from "console";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { FastifyInstance } from "fastify";
+import { readFileSync } from "fs";
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 export async function apiRoutes(fastify: FastifyInstance) {
     fastify.get('/api/status', async (request, reply) => {
         return {
@@ -21,4 +28,5 @@ export async function apiRoutes(fastify: FastifyInstance) {
             database: result.rows[0]
         }
     })
+
 }
