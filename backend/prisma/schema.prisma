@@ -1,8 +1,46 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  githubUsername String   @unique @map("github_username")
+  email          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  trades         Trade[]
+
+  @@map("user")
+}
+
+model Market {
+  id        Int      @id @default(autoincrement())
+  prUrl     String   @map("pr_url")
+  question  String
+  endTime   DateTime @map("end_time")
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at")
+  trades    Trade[]
+
+  @@index([status])
+  @@map("markets")
+}
+
+model Trade {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  marketId  Int      @map("market_id")
+  position  String
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([marketId])
+  @@map("trades")
 }

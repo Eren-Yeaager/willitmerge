@@ -1,11 +1,10 @@
-import { error } from "console";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import { FastifyInstance } from "fastify";
-import { readFileSync } from "fs";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import { FastifyInstance } from "fastify";
+
+import prisma from "../lib/prisma.js";
+
+
+
 export async function apiRoutes(fastify: FastifyInstance) {
     fastify.get('/api/status', async (request, reply) => {
         return {
@@ -27,6 +26,22 @@ export async function apiRoutes(fastify: FastifyInstance) {
             status: 'connected',
             database: result.rows[0]
         }
+    })
+
+    fastify.post('/api/users', async (request, reply) => {
+        const { githubUsername, email } = request.body as { githubUsername: string; email?: string }
+        const user = await prisma.user.create({
+            data: {
+                githubUsername,
+                email: email || null
+            }
+        })
+        return { user, message: "User created successfully" }
+    })
+
+    fastify.get('/api/users', async (request, reply) => {
+        const users = await prisma.user.findMany()
+        return { users, conunt: users.length }
     })
 
 }
