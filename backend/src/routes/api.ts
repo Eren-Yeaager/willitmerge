@@ -1,8 +1,7 @@
 
 import { FastifyInstance } from "fastify";
-
 import prisma from "../lib/prisma.js";
-
+import { error } from "console";
 
 
 export async function apiRoutes(fastify: FastifyInstance) {
@@ -18,13 +17,6 @@ export async function apiRoutes(fastify: FastifyInstance) {
         return {
             message: 'Hello from Will It Merge',
             timestamp: new Date().toISOString()
-        }
-    })
-    fastify.get('/api/test-db', async (request, reply) => {
-        const result = await fastify.pg.query('SELECT NOW() as current_time, version() as pg_version')
-        return {
-            status: 'connected',
-            database: result.rows[0]
         }
     })
 
@@ -44,4 +36,66 @@ export async function apiRoutes(fastify: FastifyInstance) {
         return { users, conunt: users.length }
     })
 
+    fastify.post('/api/markets', async (request, reply) => {
+        const { prUrl, question, endTime } = request.body as {
+            prUrl: string;
+            question: string;
+            endTime: string
+        }
+        if (!prUrl || !question || !endTime) {
+            return reply.status(400).send({
+                error: 'Missing required fields: prUrl, question , endTime',
+                statusCode: 400
+            })
+        }
+
+        const endDate = new Date(endTime)
+        if (endDate <= new Date()) {
+            return reply.status(400).send({
+                error: 'endTime must be in the future',
+                statusCode: 400
+            })
+        }
+        const market = await prisma.market.create({
+            data: {
+                prUrl,
+                question,
+                endTime: endDate,
+                status: 'open'
+            }
+        })
+        return { market, message: 'Market created successfully' }
+    })
+
+    fastify.get("/api/markets", async (request, reply) => {
+        const markets = await prisma.market.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+        return { markets, count: markets.length }
+
+    })
+
+    fastify.get('/api/markets/:id', async (request, reply) => {
+        const { id } = request.params as { id: string }
+        const marketId = parseInt(id, 10)
+
+        if (isNaN(marketId)) {
+            return reply.status(400).send({
+                error: 'Invalid market ID',
+                statusCode: 400
+            })
+        }
+        const market = await prisma.market.findUnique({
+            where: { id: marketId }
+        })
+        if (!market) {
+            return reply.status(404).send({
+                error: 'Market not found',
+                statusCode: 404
+            })
+        }
+        return { market }
+    })
 }
