@@ -98,4 +98,95 @@ export async function apiRoutes(fastify: FastifyInstance) {
         }
         return { market }
     })
+
+    fastify.post('/api/trades', async (request, reply) => {
+        const { userId, marketId, position } = request.body as {
+            userId: number;
+            marketId: number;
+            position: 'YES' | 'NO'
+        }
+
+        if (!userId || !marketId || !position) {
+            return reply.status(400).send({
+                error: "Missing required fields: userId, marketId, position",
+                statusCode: 400
+            })
+        }
+        if (position != 'YES' && position !== 'NO') {
+            return reply.status(400).send({
+                error: 'Position must be YES or NO',
+                statusCode: 400
+            })
+        }
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        })
+        if (!user) {
+            return reply.status(404).send({
+                error: 'User not found',
+                statuCode: 404
+            })
+        }
+
+        const market = await prisma.market.findUnique({
+            where: { id: marketId }
+        })
+        if (!market) {
+            return reply.status(404).send({
+                error: 'Market not found',
+                statusCode: 404
+            })
+        }
+        if (market.status !== 'open') {
+            return reply.status(400).send({
+                error: 'Cannot trade on closed or resolved markets',
+                statusCode: 400
+            })
+        }
+        const trade = await prisma.trade.create({
+            data: {
+                userId,
+                marketId,
+                position,
+                amount: 1
+            }
+        })
+        return { trade, message: 'Trade created successfully' }
+    })
+
+    fastify.get("/api/markets/:id/trades", async (request, reply) => {
+        const { id } = request.params as { id: string }
+        const marketId = parseInt(id, 10)
+        if (isNaN(marketId)) {
+            return reply.status(400).send({
+                error: "Invalid Market Id",
+                statusCode: 400
+            })
+        }
+
+        const market = await prisma.market.findUnique({
+            where: { id: marketId }
+        })
+        if (!market) {
+            return reply.status(404).send({
+                error: "Market not found",
+                statusCode: 404
+            })
+        }
+        const trades = await prisma.trade.findMany({
+            where: { marketId },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        githubUsername: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+        return { trades, count: trades.length }
+    })
 }

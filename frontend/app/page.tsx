@@ -25,6 +25,8 @@ interface Market {
 export default function Home() {
     const [markets, setMarkets] = useState<Market[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [trades, setTrades] = useState<Record<number, any[]>>({})
+    const [currentUserId] = useState<number>(1)
     const [isOpen, setIsOpen] = useState(false)
     const [formData, setFormData] = useState({
         prUrl: '',
